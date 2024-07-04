@@ -38,7 +38,7 @@ pub fn string_to_blake2b_hash(b: String) -> Result<String> {
 
 /// Serialize a `String` value into a signed hex-encoded byte string
 /// and then convert it into a `Constant` to be used in registers.
-pub fn serialize_string(s: &String) -> Constant {
+pub fn serialize_string(s: String) -> Constant {
     let b = convert_to_signed_bytes(&s.clone().into_bytes());
     b.into()
 }
@@ -54,7 +54,7 @@ pub fn serialize_hex_encoded_string(s: &String) -> Result<Constant> {
 /// bytes, hash it with blake2b_256, and then prepare it to be used
 /// in a register as a Constant
 pub fn hash_and_serialize_p2s(address: &P2SAddressString) -> Result<Constant> {
-    let ergo_tree = address_string_to_ergo_tree(&address)?;
+    let ergo_tree = address_string_to_ergo_tree(address)?;
     // Convert into hex-encoded bytes
     let base16_bytes = Base16EncodedBytes::new(&ergo_tree.sigma_serialize_bytes());
     // Convert into String
@@ -123,13 +123,13 @@ pub fn deserialize_ergo_tree_constant(c: &Constant) -> Result<P2SAddressString> 
 }
 
 /// Convert Vec<i8> to Vec<u8>
-fn convert_to_unsigned_bytes(bytes: &Vec<i8>) -> Vec<u8> {
-    bytes.iter().map(|x| x.clone() as u8).collect()
+fn convert_to_unsigned_bytes(bytes: &[i8]) -> Vec<u8> {
+    bytes.iter().map(|x| *x as u8).collect()
 }
 
 /// Convert Vec<u8> to Vec<i8>
-fn convert_to_signed_bytes(bytes: &Vec<u8>) -> Vec<i8> {
-    bytes.iter().map(|x| x.clone() as i8).collect()
+fn convert_to_signed_bytes(bytes: &[u8]) -> Vec<i8> {
+    bytes.iter().map(|x| *x as i8).collect()
 }
 
 /// Takes an Ergo address (either P2PK or P2S) as a Base58 String and returns
@@ -148,20 +148,20 @@ pub fn address_string_to_ergo_tree(address_str: &ErgoAddressString) -> Result<Er
 /// Decodes a hex-encoded string into bytes
 fn decode_hex(s: &String) -> Result<Vec<u8>> {
     if let Ok(b) = base16::decode(s) {
-        return Ok(b);
+        Ok(b)
     } else {
-        return Err(EncodingError::FailedToSerialize(s.clone()));
+        Err(EncodingError::FailedToSerialize(s.clone()))
     }
 }
 
 /// Convert from Erg to nanoErg
 pub fn erg_to_nanoerg(erg_amount: f64) -> u64 {
-    (erg_amount * 1000000000 as f64) as u64
+    (erg_amount * 1000000000_f64) as u64
 }
 
 /// Convert from nanoErg to Erg
 pub fn nanoerg_to_erg(nanoerg_amount: u64) -> f64 {
-    (nanoerg_amount as f64) / (1000000000 as f64)
+    (nanoerg_amount as f64) / (1000000000_f64)
 }
 
 #[cfg(test)]
@@ -170,10 +170,10 @@ mod tests {
 
     #[test]
     fn erg_conv_is_valid() {
-        assert_eq!((1 as f64), nanoerg_to_erg(1000000000));
-        assert_eq!((1.23 as f64), nanoerg_to_erg(1230000000));
+        assert_eq!((1_f64), nanoerg_to_erg(1000000000));
+        assert_eq!((1.23_f64), nanoerg_to_erg(1230000000));
 
-        assert_eq!(1000000000, erg_to_nanoerg(1 as f64));
+        assert_eq!(1000000000, erg_to_nanoerg(1_f64));
         assert_eq!(erg_to_nanoerg(3.64), 3640000000);
         assert_eq!(erg_to_nanoerg(0.64), 640000000);
         assert_eq!(erg_to_nanoerg(0.0064), 6400000);
